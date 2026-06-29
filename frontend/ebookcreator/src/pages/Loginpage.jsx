@@ -126,7 +126,7 @@ const LoginPage = () => {
                             <div className="flex justify-end">
                                 <button
                                     type="button"
-                                    onClick={() => setShowForgotModal(true)}
+                                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowForgotModal(true); }}
                                     className="text-sm text-violet-600 hover:text-violet-700 transition-colors bg-transparent border-0 cursor-pointer p-0"
                                 >
                                     Forgot password?
