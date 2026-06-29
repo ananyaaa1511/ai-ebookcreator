@@ -15,6 +15,19 @@ const LoginPage = () => {
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
     const [formData, setFormData] = useState({ email: '', password: '' });
+    const [showForgotModal, setShowForgotModal] = useState(false);
+    const [forgotEmail, setForgotEmail] = useState('');
+
+    const handleForgotSubmit = (e) => {
+        e.preventDefault();
+        if (!forgotEmail.trim()) {
+            toast.error('Please enter your email');
+            return;
+        }
+        toast.success(`Demo Mode: Password reset link generated for ${forgotEmail}!`);
+        setShowForgotModal(false);
+        setForgotEmail('');
+    };
 
     const validateForm = () => {
         const newErrors = {};
@@ -111,7 +124,13 @@ const LoginPage = () => {
                                 placeholder="••••••••" value={formData.password}
                                 onChange={handleChange} error={errors.password} disabled={loading} required />
                             <div className="flex justify-end">
-                                <a href="#" className="text-sm text-violet-600 hover:text-violet-700 transition-colors">Forgot password?</a>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowForgotModal(true)}
+                                    className="text-sm text-violet-600 hover:text-violet-700 transition-colors bg-transparent border-0 cursor-pointer p-0"
+                                >
+                                    Forgot password?
+                                </button>
                             </div>
                             <Button type="submit" variant="primary" size="lg"
                                 className="w-full !bg-violet-600 hover:!bg-violet-700 !rounded-xl !font-semibold"
@@ -130,6 +149,44 @@ const LoginPage = () => {
                     </p>
                 </div>
             </div>
+
+            {/* Forgot Password Modal */}
+            {showForgotModal && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl border border-gray-100">
+                        <h3 className="text-lg font-bold text-gray-900 mb-2">Reset Password</h3>
+                        <p className="text-sm text-gray-500 mb-4">Enter your email and we'll send you a password reset link (Demo Mode).</p>
+                        <form onSubmit={handleForgotSubmit} className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Email address</label>
+                                <input
+                                    type="email"
+                                    required
+                                    placeholder="you@example.com"
+                                    value={forgotEmail}
+                                    onChange={(e) => setForgotEmail(e.target.value)}
+                                    className="w-full border border-gray-200 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 text-sm"
+                                />
+                            </div>
+                            <div className="flex gap-3 justify-end text-sm">
+                                <button
+                                    type="button"
+                                    onClick={() => { setShowForgotModal(false); setForgotEmail(''); }}
+                                    className="px-4 py-2 text-gray-500 hover:text-gray-700 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl font-semibold shadow transition-colors"
+                                >
+                                    Send Link
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
