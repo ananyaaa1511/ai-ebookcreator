@@ -8,6 +8,7 @@ import Dashboard from "./pages/Dashboard";
 import Editor from './pages/Editor';
 import ViewBook from './pages/ViewBook';
 import ProfilePage from './pages/ProfilePage';
+import NotFound from './pages/NotFound';
 const App = () => {
   return (
     <div >
@@ -21,6 +22,8 @@ const App = () => {
         <Route path="/editor/:bookId" element={<ProtectedRoute><Editor /></ProtectedRoute>} />
         <Route path="/view-book/:bookId" element={<ProtectedRoute><ViewBook /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+        {/*fallback route*/}
+        <Route path="*" element={<NotFound />} />
 
 
       </Routes>

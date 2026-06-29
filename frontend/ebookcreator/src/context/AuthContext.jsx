@@ -24,10 +24,13 @@ export const AuthProvider = ({ children }) => {
         try {
             const token = localStorage.getItem("token");
             const userStr = localStorage.getItem('user');
-            if (!token && userStr) {
+            if (token && userStr && userStr !== "undefined") {
                 const userData = JSON.parse(userStr);
-                setUser(userData)
+                setUser(userData);
                 setIsAuthenticated(true);
+            } else if (!token) {
+                setIsAuthenticated(false);
+                setUser(null);
             }
         } catch (error) {
             console.error("Auth check failed:", error);

@@ -26,8 +26,23 @@ const ViewBook = () => {
     fetch();
   }, [bookId]);
 
-  const handleExport = (type) => {
-    window.open(`${BASE}/api/export/${bookId}/${type}`, '_blank');
+  const handleExport = async (type) => {
+    try {
+      const res = await api.get(`/export/${bookId}/${type}`, {
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${book?.title || 'book'}.${type === 'doc' ? 'docx' : 'pdf'}`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      toast.error('Export failed');
+    }
   };
 
   if (loading) return <div className="p-4">Loading...</div>;

@@ -23,7 +23,12 @@ exports.registerUser = async (req, res) => {
         if (user) {
             res.status(201).json({
                 message: "User registered successfully",
-                token: generationToken(user._id)
+                token: generationToken(user._id),
+                user: {
+                    _id: user._id,
+                    name: user.name,
+                    email: user.email
+                }
             })
         }
     } catch (err) {
@@ -38,10 +43,12 @@ exports.loginUser = async (req, res) => {
         if (user && (await user.matchPassword(password))) {
             res.json({
                 message: "login succesful",
-                _id: user._id,
-                name: user.name,
-                email: user.email,
                 token: generationToken(user._id),
+                user: {
+                    _id: user._id,
+                    name: user.name,
+                    email: user.email
+                }
             })
         }
         else {
