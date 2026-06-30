@@ -3,8 +3,102 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Cropper from 'react-easy-crop';
 import api from '../utils/apiClient';
 import toast from 'react-hot-toast';
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+} from '@dnd-kit/core';
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { GripVertical } from 'lucide-react';
 
 const BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+// Draggable Chapter Component
+const DraggableChapter = ({ chapter, index, onRemove, onUpdate, onGenerateContent, isGenerating }) => {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({ id: `chapter-${index}` });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+    };
+
+    return (
+        <div
+            ref={setNodeRef}
+            style={style}
+            className={`border p-4 rounded bg-gray-50 ${isDragging ? 'shadow-lg ring-2 ring-blue-500' : ''}`}
+        >
+            <div className="flex items-start gap-3 mb-3">
+                <button
+                    {...attributes}
+                    {...listeners}
+                    className="mt-1 text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing flex-shrink-0"
+                    title="Drag to reorder"
+                >
+                    <GripVertical size={20} />
+                </button>
+                <div className="flex-1">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-2 gap-2">
+                        <h3 className="font-semibold">Chapter {index + 1}</h3>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => onGenerateContent(index)}
+                                disabled={isGenerating === index}
+                                className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 disabled:bg-gray-400"
+                            >
+                                {isGenerating === index ? 'Generating...' : 'Generate content'}
+                            </button>
+                            <button
+                                onClick={() => onRemove(index)}
+                                className="text-sm text-red-600 hover:text-red-800 font-medium"
+                            >
+                                Remove
+                            </button>
+                        </div>
+                    </div>
+                    <input
+                        className="w-full border p-2 rounded mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Chapter title"
+                        value={chapter.title}
+                        onChange={(e) => onUpdate(index, 'title', e.target.value)}
+                    />
+                    <textarea
+                        className="w-full border p-2 rounded mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Chapter description"
+                        rows={2}
+                        value={chapter.description}
+                        onChange={(e) => onUpdate(index, 'description', e.target.value)}
+                    />
+                    <textarea
+                        className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Chapter content (Markdown supported)"
+                        rows={4}
+                        value={chapter.content}
+                        onChange={(e) => onUpdate(index, 'content', e.target.value)}
+                    />
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const createImage = (url) =>
     new Promise((resolve, reject) => {
@@ -56,6 +150,16 @@ const Editor = () => {
     const [numChapters, setNumChapters] = useState(5);
     const [outlineLoading, setOutlineLoading] = useState(false);
     const [chapterGenerating, setChapterGenerating] = useState(null);
+
+    // Drag-and-drop sensors
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            distance: 8,
+        }),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
 
     useEffect(() => {
         const fetch = async () => {
@@ -164,6 +268,23 @@ const Editor = () => {
             chapters.splice(index, 1);
             return { ...prev, chapters };
         });
+    };
+
+    const handleDragEnd = (event) => {
+        const { active, over } = event;
+
+        if (over && active.id !== over.id) {
+            const activeIndex = parseInt(active.id.split('-')[1]);
+            const overIndex = parseInt(over.id.split('-')[1]);
+
+            setForm((prev) => {
+                const chapters = [...(prev.chapters || [])];
+                return {
+                    ...prev,
+                    chapters: arrayMove(chapters, activeIndex, overIndex),
+                };
+            });
+        }
     };
 
     const generateOutline = async () => {
@@ -324,44 +445,33 @@ const Editor = () => {
             <div className="mt-6">
                 <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg font-medium">Chapters</h2>
-                    <button onClick={addChapter} className="px-3 py-1 bg-blue-600 text-white rounded">Add chapter</button>
+                    <button onClick={addChapter} className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">Add chapter</button>
                 </div>
                 {form.chapters && form.chapters.length > 0 ? (
-                    <div className="space-y-4">
-                        {form.chapters.map((chapter, index) => (
-                            <div key={index} className="border p-4 rounded bg-gray-50">
-                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-2 gap-2">
-                                    <h3 className="font-semibold">Chapter {index + 1}</h3>
-                                    <div className="flex gap-2">
-                                        <button onClick={() => generateChapterContent(index)} disabled={chapterGenerating === index} className="px-3 py-1 bg-green-600 text-white rounded text-sm">
-                                            {chapterGenerating === index ? 'Generating...' : 'Generate content'}
-                                        </button>
-                                        <button onClick={() => removeChapter(index)} className="text-sm text-red-600">Remove</button>
-                                    </div>
-                                </div>
-                                <input
-                                    className="w-full border p-2 rounded mb-2"
-                                    placeholder="Chapter title"
-                                    value={chapter.title}
-                                    onChange={(e) => updateChapter(index, 'title', e.target.value)}
-                                />
-                                <textarea
-                                    className="w-full border p-2 rounded mb-2"
-                                    placeholder="Chapter description"
-                                    rows={2}
-                                    value={chapter.description}
-                                    onChange={(e) => updateChapter(index, 'description', e.target.value)}
-                                />
-                                <textarea
-                                    className="w-full border p-2 rounded"
-                                    placeholder="Chapter content"
-                                    rows={4}
-                                    value={chapter.content}
-                                    onChange={(e) => updateChapter(index, 'content', e.target.value)}
-                                />
+                    <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={handleDragEnd}
+                    >
+                        <SortableContext
+                            items={form.chapters.map((_, index) => `chapter-${index}`)}
+                            strategy={verticalListSortingStrategy}
+                        >
+                            <div className="space-y-4">
+                                {form.chapters.map((chapter, index) => (
+                                    <DraggableChapter
+                                        key={`chapter-${index}`}
+                                        chapter={chapter}
+                                        index={index}
+                                        onRemove={removeChapter}
+                                        onUpdate={updateChapter}
+                                        onGenerateContent={generateChapterContent}
+                                        isGenerating={chapterGenerating}
+                                    />
+                                ))}
                             </div>
-                        ))}
-                    </div>
+                        </SortableContext>
+                    </DndContext>
                 ) : (
                     <div className="border p-4 rounded bg-gray-50 text-gray-600">No chapters yet. Add one above.</div>
                 )}
