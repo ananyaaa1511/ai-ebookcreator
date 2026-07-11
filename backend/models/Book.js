@@ -31,9 +31,9 @@ const bookSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    coverImage: {
+    description: {
         type: String,
-        default: "",
+        default: ""
     },
     chapters: [chapterSchema],
     status: {

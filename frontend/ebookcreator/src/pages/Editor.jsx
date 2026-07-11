@@ -1,6 +1,5 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import Cropper from 'react-easy-crop';
 import api from '../utils/apiClient';
 import toast from 'react-hot-toast';
 import {
@@ -20,8 +19,7 @@ import {
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical } from 'lucide-react';
-
-const BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+import { useEffect } from 'react';
 
 // Draggable Chapter Component
 const DraggableChapter = ({ chapter, index, onRemove, onUpdate, onGenerateContent, isGenerating }) => {
@@ -100,52 +98,12 @@ const DraggableChapter = ({ chapter, index, onRemove, onUpdate, onGenerateConten
     );
 };
 
-const createImage = (url) =>
-    new Promise((resolve, reject) => {
-        const image = new Image();
-        image.addEventListener('load', () => resolve(image));
-        image.addEventListener('error', (error) => reject(error));
-        image.setAttribute('crossOrigin', 'anonymous');
-        image.src = url;
-    });
-
-const getCroppedImg = async (imageSrc, pixelCrop) => {
-    const image = await createImage(imageSrc);
-    const canvas = document.createElement('canvas');
-    canvas.width = pixelCrop.width;
-    canvas.height = pixelCrop.height;
-    const ctx = canvas.getContext('2d');
-
-    ctx.drawImage(
-        image,
-        pixelCrop.x,
-        pixelCrop.y,
-        pixelCrop.width,
-        pixelCrop.height,
-        0,
-        0,
-        pixelCrop.width,
-        pixelCrop.height
-    );
-
-    return new Promise((resolve) => {
-        canvas.toBlob((blob) => {
-            resolve(blob);
-        }, 'image/png');
-    });
-};
-
 const Editor = () => {
     const { bookId } = useParams();
     const navigate = useNavigate();
     const [book, setBook] = useState(null);
     const [loading, setLoading] = useState(false);
     const [form, setForm] = useState({ title: '', subtitle: '', author: '', description: '', chapters: [] });
-    const [selectedFile, setSelectedFile] = useState(null);
-    const [selectedFileUrl, setSelectedFileUrl] = useState(null);
-    const [crop, setCrop] = useState({ x: 0, y: 0 });
-    const [zoom, setZoom] = useState(1);
-    const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
     const [aiStyle, setAiStyle] = useState('Informative');
     const [numChapters, setNumChapters] = useState(5);
     const [outlineLoading, setOutlineLoading] = useState(false);
@@ -183,56 +141,6 @@ const Editor = () => {
         };
         fetch();
     }, [bookId]);
-
-    useEffect(() => {
-        return () => {
-            if (selectedFileUrl) URL.revokeObjectURL(selectedFileUrl);
-        };
-    }, [selectedFileUrl]);
-
-    const coverSrc = book?.coverImageBase64 || (book?.coverImage ? `${BASE}/${book.coverImage}` : null);
-
-    const handleCropComplete = useCallback((croppedArea, croppedAreaPixels) => {
-        setCroppedAreaPixels(croppedAreaPixels);
-    }, []);
-
-    const handleFileSelect = (file) => {
-        if (!file) return;
-        const url = URL.createObjectURL(file);
-        setSelectedFile(file);
-        setSelectedFileUrl(url);
-        setCrop({ x: 0, y: 0 });
-        setZoom(1);
-        setCroppedAreaPixels(null);
-    };
-
-    const uploadCroppedCover = async () => {
-        if (!selectedFileUrl || !croppedAreaPixels) {
-            toast.error('Please select and crop an image before uploading.');
-            return;
-        }
-
-        try {
-            const croppedBlob = await getCroppedImg(selectedFileUrl, croppedAreaPixels);
-            if (!croppedBlob) {
-                toast.error('Could not create cropped image');
-                return;
-            }
-            const fileToUpload = new File([croppedBlob], selectedFile?.name || 'cover.png', { type: 'image/png' });
-            const fd = new FormData();
-            fd.append('coverImage', fileToUpload);
-            await api.put(`/books/cover/${bookId}`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
-            toast.success('Cover uploaded');
-            setSelectedFile(null);
-            setSelectedFileUrl(null);
-            setCroppedAreaPixels(null);
-            const res = await api.get(`/books/${bookId}`);
-            setBook(res.data);
-        } catch (err) {
-            console.error(err);
-            toast.error('Upload failed');
-        }
-    };
 
     const handleSave = async () => {
         try {
@@ -355,16 +263,6 @@ const Editor = () => {
     return (
         <div className="max-w-3xl mx-auto p-6 bg-white shadow rounded">
             <div className="flex flex-col lg:flex-row gap-6">
-                <div className="w-full lg:w-48 h-64 bg-gray-100 rounded overflow-hidden flex items-center justify-center">
-                    {selectedFileUrl ? (
-                        <img src={selectedFileUrl} alt="preview" className="w-full h-full object-cover" />
-                    ) : coverSrc ? (
-                        <img src={coverSrc} alt="cover" className="w-full h-full object-cover" />
-                    ) : (
-                        <div className="text-sm text-gray-400">No cover</div>
-                    )}
-                </div>
-
                 <div className="flex-1">
                     <div className="mb-3">
                         <label className="block text-sm font-medium">Title</label>
@@ -384,10 +282,6 @@ const Editor = () => {
                     </div>
 
                     <div className="flex flex-wrap items-center gap-3">
-                        <label className="px-3 py-2 bg-gray-100 border rounded cursor-pointer">
-                            Choose cover and crop
-                            <input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileSelect(e.target.files[0])} />
-                        </label>
                         <button onClick={handleSave} className="px-4 py-2 bg-orange-500 text-white rounded">Save</button>
                         <button onClick={() => navigate('/dashboard')} className="px-4 py-2 border rounded">Back</button>
                     </div>
@@ -415,32 +309,6 @@ const Editor = () => {
                 </div>
                 <p className="mt-3 text-sm text-gray-600">Generate a chapter outline from the current title and description, then optionally generate individual chapter content.</p>
             </div>
-
-            {selectedFileUrl && (
-                <div className="mt-6">
-                    <div className="rounded overflow-hidden bg-black relative" style={{ height: 360 }}>
-                        <Cropper
-                            image={selectedFileUrl}
-                            crop={crop}
-                            zoom={zoom}
-                            aspect={3 / 4}
-                            onCropChange={setCrop}
-                            onZoomChange={setZoom}
-                            onCropComplete={handleCropComplete}
-                        />
-                    </div>
-                    <div className="mt-4 flex flex-col gap-3">
-                        <label className="flex items-center gap-3 text-sm">
-                            Zoom
-                            <input type="range" min={1} max={3} step={0.1} value={zoom} onChange={(e) => setZoom(Number(e.target.value))} className="flex-1" />
-                        </label>
-                        <div className="flex gap-3">
-                            <button onClick={uploadCroppedCover} className="px-4 py-2 bg-green-600 text-white rounded">Upload cropped cover</button>
-                            <button type="button" onClick={() => { setSelectedFile(null); setSelectedFileUrl(null); setCroppedAreaPixels(null); }} className="px-4 py-2 border rounded">Cancel</button>
-                        </div>
-                    </div>
-                </div>
-            )}
 
             <div className="mt-6">
                 <div className="flex items-center justify-between mb-4">

@@ -4,8 +4,6 @@ import api from '../utils/apiClient';
 import { AuthContext } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
-const BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-
 const Dashboard = () => {
   const { logout } = useContext(AuthContext);
   const [books, setBooks] = useState([]);
@@ -26,7 +24,6 @@ const Dashboard = () => {
   }, []);
 
   useEffect(() => {
-    
     fetchBooks();
   }, [fetchBooks]);
 
@@ -45,7 +42,8 @@ const Dashboard = () => {
       fetchBooks();
     } catch (err) {
       console.error(err);
-      toast.error('Save failed');
+      const message = err.response?.data?.message || 'Save failed';
+      toast.error(message);
     }
   };
 
@@ -66,38 +64,6 @@ const Dashboard = () => {
     }
   };
 
-  const handleExport = async (id, type) => {
-    try {
-      const res = await api.get(`/export/${id}/${type}`, {
-        responseType: 'blob',
-      });
-      const url = window.URL.createObjectURL(new Blob([res.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `book.${type === 'doc' ? 'docx' : 'pdf'}`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error(err);
-      toast.error('Export failed');
-    }
-  };
-  const handleCoverChange = async (id, file) => {
-    if (!file) return;
-    const fd = new FormData();
-    fd.append('coverImage', file);
-    try {
-      await api.put(`/books/cover/${id}`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
-      toast.success('Cover uploaded');
-      fetchBooks();
-    } catch (err) {
-      console.error(err);
-      toast.error('Upload failed');
-    }
-  };
-
   return (
     <div className="max-w-4xl mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
@@ -107,8 +73,8 @@ const Dashboard = () => {
 
       <form onSubmit={handleSubmit} className="mb-6 bg-white shadow p-4 rounded grid grid-cols-1 md:grid-cols-3 gap-3">
         <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Title" required className="border p-2 rounded col-span-1 md:col-span-3" />
-        <input value={form.author} onChange={(e) => setForm({ ...form, author: e.target.value })} placeholder="Author" className="border p-2 rounded" />
-        <input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Description" className="border p-2 rounded" />
+        <input value={form.author} onChange={(e) => setForm({ ...form, author: e.target.value })} placeholder="Author" required className="border p-2 rounded" />
+        <input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Description" required className="border p-2 rounded" />
         <div className="flex items-center gap-2">
           <button type="submit" className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded shadow">{editing ? 'Update' : 'Create'}</button>
           {editing && <button type="button" onClick={() => { setEditing(null); setForm({ title: '', author: '', description: '' }); }} className="px-4 py-2">Cancel</button>}
@@ -119,14 +85,6 @@ const Dashboard = () => {
         <ul className="space-y-4">
           {books.map((b) => (
             <li key={b._id || b.id} className="bg-white shadow rounded p-4 flex gap-4 items-start">
-              <div className="w-24 h-32 bg-gray-100 rounded overflow-hidden flex-shrink-0">
-                {b.coverImage ? (
-                  <img src={`${BASE}/${b.coverImage}`} alt="cover" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-sm text-gray-400">No cover</div>
-                )}
-              </div>
-
               <div className="flex-1">
                 <div className="flex justify-between">
                   <div>
@@ -143,13 +101,6 @@ const Dashboard = () => {
                   <Link to={`/editor/${b._id || b.id}`} className="px-3 py-1 border rounded">Open Editor</Link>
                   <Link to={`/view-book/${b._id || b.id}`} className="px-3 py-1 border rounded">View</Link>
                   <button onClick={() => handleDelete(b._id || b.id)} className="px-3 py-1 border rounded text-red-600">Delete</button>
-                  <button onClick={() => handleExport(b._id || b.id, 'pdf')} className="px-3 py-1 border rounded">Export PDF</button>
-                  <button onClick={() => handleExport(b._id || b.id, 'doc')} className="px-3 py-1 border rounded">Export DOC</button>
-                </div>
-
-                <div className="mt-3 flex items-center gap-2">
-                  <label className="text-sm">Change cover:</label>
-                  <input type="file" accept="image/*" onChange={(e) => handleCoverChange(b._id || b.id, e.target.files[0])} />
                 </div>
               </div>
             </li>
