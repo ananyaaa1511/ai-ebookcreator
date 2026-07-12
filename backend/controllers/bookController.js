@@ -8,7 +8,6 @@ const createBook = async (req, res) => {
         if (!title || !author || !description) {
             return res.status(400).json({ message: "Please provide a title, author, and description" });
         }
-
         const book = await Book.create({
             userId: req.user._id,
             title,
@@ -54,7 +53,7 @@ const getBookById = async (req, res) => {
     }
 };
 
-// @desc    Update book details (text fields only)
+// @desc    Update book details
 // @route   PUT /api/books/:id
 const updateBook = async (req, res) => {
     try {

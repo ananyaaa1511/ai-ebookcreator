@@ -11,10 +11,22 @@ const aiRoutes = require("./routes/aiRoutes");
 const app = express();
 
 // Middleware to handle CORS
+const allowedOrigins = [
+    "https://ai-ebookcreator.vercel.app",
+    "http://localhost:5173"
+];
+
 app.use(cors({
-    origin: "http://localhost:5173",
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error("Not allowed by CORS"));
+        }
+    },
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true
 }));
 
 // Connect to database

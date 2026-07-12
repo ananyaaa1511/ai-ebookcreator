@@ -41,23 +41,22 @@ const Dropdown = ({
                     className={`absolute top-full mt-2 ${alignmentClasses[align]} bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-max`}
                 >
                     {items.map((item, index) => (
-                        <React.Fragment key={index}>
-                            {item.divider ? (
-                                <div className="border-t border-gray-200" />
-                            ) : (
-                                <button
-                                    onClick={() => {
-                                        item.onClick?.();
-                                        setIsOpen(false);
-                                    }}
-                                    disabled={item.disabled}
-                                    className={`w-full text-left px-4 py-2 hover:bg-gray-100 transition-colors duration-150 first:rounded-t-lg last:rounded-b-lg ${item.disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-                                        } ${item.className || ''}`}
-                                >
-                                    {item.label}
-                                </button>
-                            )}
-                        </React.Fragment>
+                        item.divider ? (
+                            <div key={index} className="border-t border-gray-200" />
+                        ) : (
+                            <button
+                                key={index}
+                                onClick={() => {
+                                    item.onClick?.();
+                                    setIsOpen(false);
+                                }}
+                                disabled={item.disabled}
+                                className={`w-full text-left px-4 py-2 hover:bg-gray-100 transition-colors duration-150 first:rounded-t-lg last:rounded-b-lg ${item.disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                                    } ${item.className || ''}`}
+                            >
+                                {item.label}
+                            </button>
+                        )
                     ))}
                 </div>
             )}

@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+
 const chapterSchema = new mongoose.Schema({
     title: {
         type: String,
@@ -13,6 +14,7 @@ const chapterSchema = new mongoose.Schema({
         default: "",
     },
 });
+
 const bookSchema = new mongoose.Schema({
     userId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -41,7 +43,7 @@ const bookSchema = new mongoose.Schema({
         enum: ["draft", "published"],
         default: "draft",
     },
-
 },
     { timestamps: true });
+
 module.exports = mongoose.model("Book", bookSchema);

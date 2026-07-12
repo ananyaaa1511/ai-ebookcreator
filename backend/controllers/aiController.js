@@ -27,7 +27,7 @@ const generateOutline = async (req, res) => {
     try {
         const { topic, style, numChapters, description } = req.body;
 
-        if (!topic ) {
+        if (!topic) {
             return res.status(400).json({ message: "Please provide a topic" });
         }
 

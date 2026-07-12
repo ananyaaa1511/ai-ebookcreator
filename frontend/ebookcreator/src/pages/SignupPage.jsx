@@ -10,8 +10,6 @@ import { BookOpen, Sparkles, CheckCircle2 } from 'lucide-react';
 
 const PERKS = [
     'AI-assisted chapter writing',
-    'PDF & DOCX export',
-    'Cover image uploads',
     'Unlimited eBooks',
 ];
 
