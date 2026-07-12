@@ -12,7 +12,7 @@ const app = express();
 
 // Middleware to handle CORS
 const allowedOrigins = [
-    "https://ai-ebookcreator-2exa.vercel.app/",
+    "https://ai-ebookcreator-2exa.vercel.app",
     "http://localhost:5173"
 ];
 
